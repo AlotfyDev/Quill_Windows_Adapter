@@ -1,0 +1,15 @@
+# Build output
+x64/
+Debug/
+Release/
+*.user
+*.aps
+*.log
+
+# VS
+.vs/
+*.sdf
+*.opensdf
+*.opendb
+*.VC.db
+*.VC.opendb

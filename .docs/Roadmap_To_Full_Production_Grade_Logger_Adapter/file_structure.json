@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "description": "Target filesystem structure for Logger_Adapter after roadmap completion",
+    "version": "1.0",
+    "generated": "2026-06-11",
+    "status_legend": {
+      "new": "Brand new file, no existing source",
+      "extracted": "Split from an existing file into its own unit",
+      "modified": "Existing file that will be extended",
+      "unchanged": "Existing file with no planned changes",
+      "deprecated": "Existing file that will be phased out"
+    }
+  },
+
+  "config": {
+    "description": "Configuration data structures — all pure structs/enums, no logic",
+    "files": {
+      "LoggingConfig.hpp": {
+        "status": "modified",
+        "source": "logging/LoggingConfig.hpp",
+        "tasks": ["C01", "C03", "M06", "M07", "M08", "M13", "P01", "P02"],
+        "description": "Central config struct; aggregates LoggerEntry[], BacktraceConfig, QueueConfig, PatternConfig, error_callback, stderr, eventlog, backend_cpu_affinity via #include",
+        "action": "Extend to #include sub-config headers; keep as the single entry-point config header"
+      },
+      "LoggerEntry.hpp": {
+        "status": "extracted",
+        "source": "logging/LoggingConfig.hpp (inline struct)",
+        "tasks": ["C01"],
+        "description": "struct LoggerEntry — per-logger name, log_level, sink enable flags, backtrace override",
+        "action": "Extract from LoggingConfig.hpp into its own header"
+      },
+      "BacktraceConfig.hpp": {
+        "status": "extracted",
+        "source": "logging/LoggingConfig.hpp (inline struct in C03 plan)",
+        "tasks": ["C03"],
+        "description": "struct BacktraceConfig — enabled, capacity, flush_on_level",
+        "action": "Extract from LoggingConfig.hpp into its own header"
+      },
+      "QueueConfig.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["M08"],
+        "description": "struct QueueConfig + QueueOverflowPolicy enum — queue_type, initial_capacity, max_capacity, retry_interval_ns",
+        "action": "Create new header"
+      },
+      "PatternConfig.hpp": {
+        "status": "extracted",
+        "source": "logging/LoggingConfig.hpp (inline struct in M06 plan)",
+        "tasks": ["M06"],
+        "description": "struct PatternConfig — format string, timestamp_pattern, utc flag",
+        "action": "Extract from LoggingConfig.hpp into its own header"
+      }
+    }
+  },
+
+  "setup": {
+    "description": "Initialization, teardown, and logger registry — the orchestration layer",
+    "files": {
+      "LoggerSetup.hpp": {
+        "status": "extracted",
+        "source": "logging/LoggerSetup.hpp",
+        "tasks": ["C01", "C03", "M01", "M02", "M06", "M07", "M08", "M13", "P01", "P02"],
+        "description": "InitializeLogging() + ShutdownLogging() — orchestrates SinkFactory sink creation → LoggerRegistry logger creation → Backend::start",
+        "action": "Extract from logging/LoggerSetup.hpp into setup/; delegate sink creation to SinkFactory, logger creation to LoggerRegistry"
+      },
+      "LoggerRegistry.hpp": {
+        "status": "extracted",
+        "source": "logging/LoggerSetup.hpp (GetLogger function)",
+        "tasks": ["C01", "C03"],
+        "description": "GetLogger(name, level) → lookup/create named logger; FlushBacktrace(logger); root_logger_ptr() access",
+        "action": "Extract GetLogger logic from LoggerSetup.hpp into its own header"
+      },
+      "SinkFactory.hpp": {
+        "status": "extracted",
+        "source": "logging/LoggerSetup.hpp (sink creation blocks)",
+        "tasks": ["M01", "M13", "P01"],
+        "description": "CreateConsoleSink(), CreateFileSink(), CreateRotatingFileSink(), CreateJsonFileSink(), CreateStderrSink(), CreateEventLogSink() — all sink creation logic in one place",
+        "action": "Extract sink-instantiation code from LoggerSetup.hpp into its own header"
+      }
+    }
+  },
+
+  "macros": {
+    "description": "All logging macros and their function template variants — one concern per file",
+    "files": {
+      "Core.hpp": {
+        "status": "extracted",
+        "source": "logging/HotPathLogger.hpp (includes and central re-export)",
+        "tasks": ["C02"],
+        "description": "Central #include that aggregates all macros/*.hpp; provides LOG_LEVEL() runtime macro; respects QUILL_COMPILE_ACTIVE_LOG_LEVEL",
+        "action": "Extract the umbrella include and LOG_LEVEL macro from HotPathLogger.hpp"
+      },
+      "Standard.hpp": {
+        "status": "extracted",
+        "source": "logging/HotPathLogger.hpp (LOG_TRACE..LOG_CRIT macros)",
+        "tasks": [],
+        "description": "#define LOG_TRACE(logger, fmt, ...) / LOG_DEBUG / LOG_INFO / LOG_WARN / LOG_ERR / LOG_CRIT + function template LogInfo(..) etc.",
+        "action": "Extract from HotPathLogger.hpp"
+      },
+      "VariableArgs.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["M03"],
+        "description": "#define LOGV_TRACE(logger, ...) .. LOGV_CRIT + function template LogVInfo(..) — auto-captures variable names",
+        "action": "Create new header"
+      },
+      "Structured.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["M04"],
+        "description": "#define LOGJ_TRACE(logger, ...) .. LOGJ_CRIT — deferred JSON formatting on JsonFileSink",
+        "action": "Create new header"
+      },
+      "RateLimited.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["M05"],
+        "description": "#define LOG_INFO_LIMIT(interval, logger, ...) / LOG_INFO_EVERY_N(n, logger, ...) + all 6 levels — rate-limited and every-N throttling",
+        "action": "Create new header"
+      },
+      "Backtrace.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["C03"],
+        "description": "#define LOG_BACKTRACE(logger, fmt, ...) + function template LogBacktrace(..)",
+        "action": "Create new header"
+      }
+    }
+  },
+
+  "sinks": {
+    "description": "Custom sink implementations (beyond Quill's built-in sinks)",
+    "files": {
+      "EventLogSink.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["P01"],
+        "description": "class EventLogSink : public quill::Sink — declaration; write/flush_sink overrides",
+        "action": "Create new header"
+      },
+      "EventLogSink.cpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["P01"],
+        "description": "EventLogSink implementation — RegisterEventSource/ReportEvent/DeregisterEventSource Win32 calls",
+        "action": "Create new .cpp"
+      }
+    }
+  },
+
+  "windows": {
+    "description": "Windows-native API wrappers for POSIX-only Quill features",
+    "files": {
+      "ThreadAffinity.hpp": {
+        "status": "new",
+        "source": null,
+        "tasks": ["P02"],
+        "description": "PinCurrentThreadToCore(core_index) / SetCurrentThreadAffinity(mask) via SetThreadAffinityMask — inline header-only",
+        "action": "Create new header"
+      }
+    }
+  },
+
+  "error": {
+    "description": "Error handling types — Result monad, error codes, error context",
+    "files": {
+      "ErrorCode.hpp": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "enum class ErrorCode + ErrorCodeToString() — unchanged",
+        "action": "None"
+      },
+      "ErrorContext.hpp": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "struct ErrorContext — code, file, line, function, message, timestamp — unchanged",
+        "action": "None"
+      },
+      "ErrorMacros.hpp": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "MAKE_ERROR, RETURN_IF_ERROR, LOG_AND_RETURN_ERROR, etc. — unchanged",
+        "action": "None"
+      },
+      "Result.hpp": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["M09", "M10"],
+        "description": "Result<T> + ResultVoid — adds value_or(), and_then(), map(), or_else() (M09) + guarded access with debug assertions (M10)",
+        "action": "Extend with monadic methods + debug assertions"
+      }
+    }
+  },
+
+  "emergency": {
+    "description": "Emergency subsystem — crash handling, health probes, graceful shutdown",
+    "files": {
+      "EmergencyConfig.hpp": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["M12"],
+        "description": "struct EmergencyConfig — will remove unused shutdown_timeout_ms field",
+        "action": "Remove shutdown_timeout_ms"
+      },
+      "EmergencyManager.hpp": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["C03", "M11"],
+        "description": "EmergencyManager — adds Reset(), SetEmergencyMode() (M11) + backtrace flush before FatalError (C03)",
+        "action": "Add Reset/SetEmergencyMode methods; wire backtrace flush in FatalError"
+      },
+      "CrashHandler.hpp": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["M12"],
+        "description": "CrashHandler — remove MakeSignalHandlerOptions, SetupCrashLogger if they remain unused; or wire them up",
+        "action": "Clean up dead code (Option A: wire or Option B: remove)"
+      },
+      "GracefulShutdown.hpp": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "GracefulShutdown — orderly shutdown sequence with timeout — unchanged",
+        "action": "None"
+      },
+      "HealthProbe.hpp": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["M07", "M11"],
+        "description": "HealthProbe — adds RecordBackendError() (M07) + RecordRecovery() (M11)",
+        "action": "Add RecordBackendError and RecordRecovery methods"
+      }
+    }
+  },
+
+  "root": {
+    "description": "Root-level project files",
+    "files": {
+      "Logger_Adapter.cpp": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "Translation unit — #include <quill/core/Codec.h> to instantiate backend; unchanged",
+        "action": "None"
+      },
+      "Logger_Adapter.vcxproj": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["C02"],
+        "description": "Project file — add QUILL_COMPILE_ACTIVE_LOG_LEVEL preprocessor defines per configuration",
+        "action": "Add preprocessor definitions for compile-time log level"
+      },
+      "Logger_Adapter.vcxproj.filters": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["C01", "M03", "M04", "M05", "C03", "P01", "P02"],
+        "description": "Filters file — add new folders (config, setup, macros, sinks, windows) and file entries",
+        "action": "Update with new folder/file filters"
+      },
+      "pch.h": {
+        "status": "modified",
+        "source": null,
+        "tasks": ["G01m"],
+        "description": "Precompiled header — optionally add <quill/std/*.h> for STL type logging",
+        "action": "Optionally include STL type headers"
+      },
+      "pch.cpp": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "PCH create translation unit — unchanged",
+        "action": "None"
+      },
+      "framework.h": {
+        "status": "unchanged",
+        "source": null,
+        "tasks": [],
+        "description": "Windows framework includes — unchanged",
+        "action": "None"
+      }
+    }
+  },
+
+  "logging": {
+    "description": "LEGACY — existing folder; files will be redistributed to config/, setup/, macros/",
+    "files": {
+      "HotPathLogger.hpp": {
+        "status": "deprecated",
+        "source": null,
+        "tasks": ["ALL"],
+        "description": "Will be replaced by macros/Core.hpp + macros/Standard.hpp + macros/VariableArgs.hpp + macros/Structured.hpp + macros/RateLimited.hpp + macros/Backtrace.hpp",
+        "action": "Deprecate; keep as thin re-export umbrella during transition, then remove"
+      },
+      "LoggerSetup.hpp": {
+        "status": "deprecated",
+        "source": null,
+        "tasks": ["C01", "C03", "M01", "M06", "M07", "M13", "P01"],
+        "description": "Will be replaced by setup/LoggerSetup.hpp + setup/LoggerRegistry.hpp + setup/SinkFactory.hpp",
+        "action": "Deprecate; split into setup/ files, then remove"
+      },
+      "LoggingConfig.hpp": {
+        "status": "deprecated",
+        "source": null,
+        "tasks": ["C01", "C03", "M06", "M08"],
+        "description": "Will be replaced by config/LoggingConfig.hpp (umbrella) + config/LoggerEntry.hpp + config/BacktraceConfig.hpp + config/QueueConfig.hpp + config/PatternConfig.hpp",
+        "action": "Deprecate; split into config/ files, then remove"
+      },
+      "StructuredLogger.hpp": {
+        "status": "deprecated",
+        "source": null,
+        "tasks": ["M04"],
+        "description": "LogStructured function — marked deprecated in favor of LOGJ_* macros; remove after M04 transition period",
+        "action": "Mark deprecated; remove after M04 is stable"
+      }
+    }
+  }
+}
