@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "quill-windows-adapter",
+  "version": "0.2.0",
+  "description": "Windows adapter for Quill logging library with daily rotation and sanitization",
+  "dependencies": [
+    {
+      "name": "quill",
+      "version>=": "10.0.1"
+    },
+    {
+      "name": "zlib",
+      "version>=": "1.3.1"
+    }
+  ]
+}
