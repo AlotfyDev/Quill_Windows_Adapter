@@ -13,7 +13,7 @@ This adapter bridges **platform gaps** in Quill v10.0.1 on Windows while providi
 | **SyslogSink** | ❌ Won't compile (`syslog.h` not available) | N/A (use EventLogSink instead) |
 | **SystemdSink** | ❌ Won't compile (`systemd/sd-journal.h` not available) | N/A (use EventLogSink instead) |
 | **AndroidSink** | ❌ Won't compile (`android/log.h` not available) | N/A (Windows-specific) |
-| **/dev/null null sink** | ⚠️ Silently creates file (StreamSink.h:76) | `NullSink` with explicit `enabled=false` pattern |
+| **/dev/null null sink** | ⚠️ Silently creates file (StreamSink.h:76) | ✅ `NullSink` - explicit null sink |
 | **Daily rotation with gzip** | ❌ Not supported | ✅ `DailyRotatingFileSink` with zlib compression |
 | **Custom archive naming** | ❌ Not supported | ✅ `{stem}.{YYYY-MM-DD}.{ext}` naming |
 | **Retention by days** | ❌ Not supported | ✅ `max_archive_days` configuration |
@@ -44,6 +44,7 @@ This adapter bridges **platform gaps** in Quill v10.0.1 on Windows while providi
 |-------|------------------|
 | `DailyRotatingFileSink` | Daily rotation, gzip compression, day-based retention |
 | `SanitizingSink` | Message sanitization via `FileEventNotifier::before_write` |
+| `NullSink` | Windows null-sink (Quill's `/dev/null` doesn't work on Windows) |
 | `EventLogSink` | Native Windows Event Log integration (Quill has none) |
 
 ---

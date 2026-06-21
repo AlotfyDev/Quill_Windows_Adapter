@@ -176,6 +176,7 @@
     <ClInclude Include="include\log_Adpt\sinks\EventLogSink.hpp" />
     <ClInclude Include="include\log_Adpt\sinks\FileSinkHandler.hpp" />
     <ClInclude Include="include\log_Adpt\sinks\StderrSink.hpp" />
+    <ClInclude Include="include\log_Adpt\sinks\NullSink.hpp" />
     <ClInclude Include="include\log_Adpt\emergency\CrashHandler.hpp" />
     <ClInclude Include="include\log_Adpt\emergency\EmergencyConfig.hpp" />
     <ClInclude Include="include\log_Adpt\emergency\EmergencyManager.hpp" />
